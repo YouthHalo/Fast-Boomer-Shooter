@@ -43,7 +43,7 @@ func _physics_process(delta):
 	if Input.is_action_just_pressed("dash") and dash_timer <= 0.0:
 		var dash_dir = direction
 		if dash_dir == Vector3.ZERO:
-			dash_dir = -transform.basis.z.normalized()
+			dash_dir = - transform.basis.z.normalized()
 		dash_velocity = dash_dir * DASH_SPEED
 		dash_timer = DASH_TIME
 
