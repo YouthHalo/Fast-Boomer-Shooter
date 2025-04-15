@@ -10,8 +10,8 @@ const JUMP_VELOCITY = 9
 @export var max_air_jumps = 1
 var air_jumps = 1
 
-const DASH_SPEED = 60.0
-const DASH_TIME = 0.15
+const DASH_SPEED = 50.0
+const DASH_TIME = 0.3
 var dash_timer = 0.0
 var dash_velocity = Vector3.ZERO
 
@@ -27,10 +27,15 @@ func _physics_process(delta):
 	elif is_on_floor() and air_jumps < max_air_jumps:
 		air_jumps = 2
 
+	#send the player back to origin when falling off
+	if position.y < -30:
+		position = Vector3.ZERO
+		velocity = Vector3.ZERO
+
 	# Handle Jump
 	if Input.is_action_just_pressed("jump") and air_jumps > 0:
 		if not is_on_floor():
-			velocity.y = JUMP_VELOCITY * 0.8
+			velocity.y = JUMP_VELOCITY * 0.85
 			air_jumps -= 1
 		elif is_on_floor():
 			velocity.y = JUMP_VELOCITY
@@ -42,9 +47,12 @@ func _physics_process(delta):
 	# Dash input
 	if Input.is_action_just_pressed("dash") and dash_timer <= 0.0:
 		var dash_dir = direction
+		# No movement dash
 		if dash_dir == Vector3.ZERO:
 			dash_dir = - transform.basis.z.normalized()
-		dash_velocity = dash_dir * DASH_SPEED
+			dash_velocity = dash_dir * DASH_SPEED * 0.8
+		else:
+			dash_velocity = dash_dir * DASH_SPEED
 		dash_timer = DASH_TIME
 
 	# Apply dash if active
