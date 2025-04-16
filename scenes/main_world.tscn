@@ -1,11 +1,25 @@
-[gd_scene load_steps=5 format=3 uid="uid://cv72v1nlu10ia"]
+[gd_scene load_steps=7 format=3 uid="uid://cv72v1nlu10ia"]
 
 [ext_resource type="PackedScene" uid="uid://bgav01dmub54l" path="res://scenes/player.tscn" id="1_6x5uh"]
-[ext_resource type="Texture2D" uid="uid://ev3l80lqjmok" path="res://icon.svg" id="1_wjoj8"]
-[ext_resource type="PackedScene" uid="uid://cnflbaff401hk" path="res://scenes/in_game_ui.tscn" id="2_tt5ry"]
 
-[sub_resource type="BoxShape3D" id="BoxShape3D_tt5ry"]
-size = Vector3(100, 1, 100)
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_6x5uh"]
+albedo_color = Color(0, 1, 0, 1)
+
+[sub_resource type="PrismMesh" id="PrismMesh_6x5uh"]
+left_to_right = 1.0
+size = Vector3(10, 2, 10)
+
+[sub_resource type="PrismMesh" id="PrismMesh_tt5ry"]
+left_to_right = 1.0
+size = Vector3(10, 4, 10)
+
+[sub_resource type="PrismMesh" id="PrismMesh_wjoj8"]
+left_to_right = 1.0
+size = Vector3(10, 6, 10)
+
+[sub_resource type="PrismMesh" id="PrismMesh_bdp8l"]
+left_to_right = 1.0
+size = Vector3(10, 8, 10)
 
 [node name="Main World" type="Node3D"]
 
@@ -14,20 +28,31 @@ transform = Transform3D(-0.866023, -0.433016, 0.250001, 0, 0.499998, 0.866027, -
 shadow_enabled = true
 directional_shadow_max_distance = 1.0
 
-[node name="StaticBody3D" type="StaticBody3D" parent="."]
-
-[node name="CSGBox3D" type="CSGBox3D" parent="StaticBody3D"]
+[node name="CSGBox3D" type="CSGBox3D" parent="."]
 transform = Transform3D(10, 0, 0, 0, 0.333, 0, 0, 0, 10, 0, 0, 0)
+use_collision = true
 size = Vector3(10, 3, 10)
-
-[node name="Sprite3D" type="Sprite3D" parent="StaticBody3D"]
-transform = Transform3D(78, 0, 0, 0, -3.40949e-06, 78, 0, -78, -3.40949e-06, 0, 0.5, 0)
-texture = ExtResource("1_wjoj8")
-
-[node name="CollisionShape3D" type="CollisionShape3D" parent="StaticBody3D"]
-shape = SubResource("BoxShape3D_tt5ry")
+material = SubResource("StandardMaterial3D_6x5uh")
 
 [node name="Player" parent="." instance=ExtResource("1_6x5uh")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.50249, 2.66622, 0)
 
-[node name="In-Game UI" parent="." instance=ExtResource("2_tt5ry")]
+[node name="CSGMesh3D" type="CSGMesh3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 30, 1.4971, -19)
+use_collision = true
+mesh = SubResource("PrismMesh_6x5uh")
+
+[node name="CSGMesh3D2" type="CSGMesh3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 29.9725, 2.47404, -7.01576)
+use_collision = true
+mesh = SubResource("PrismMesh_tt5ry")
+
+[node name="CSGMesh3D3" type="CSGMesh3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 29.9725, 3.47404, 5.98424)
+use_collision = true
+mesh = SubResource("PrismMesh_wjoj8")
+
+[node name="CSGMesh3D4" type="CSGMesh3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 29.9725, 4.49119, 18.9842)
+use_collision = true
+mesh = SubResource("PrismMesh_bdp8l")

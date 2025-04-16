@@ -13,7 +13,7 @@ script = ExtResource("1_kplmn")
 
 [node name="RichTextLabel" type="RichTextLabel" parent="."]
 layout_mode = 0
-offset_right = 101.0
+offset_right = 441.0
 offset_bottom = 22.0
 text = "FPS: XXXXX"
 scroll_active = false
