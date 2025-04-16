@@ -17,6 +17,10 @@ var dash_velocity = Vector3.ZERO
 
 var touching_wall = false
 
+
+var camera_tilt = 0.0
+var camera_fov = 90.0
+
 var gravity = ProjectSettings.get_setting("physics/3d/default_gravity") * 2
 
 func _ready():
@@ -89,13 +93,13 @@ func _physics_process(delta):
 			velocity.x = move_toward(velocity.x, 0, SPEED)
 			velocity.z = move_toward(velocity.z, 0, SPEED)
 
-	# Smooth camera tilt based on left-right velocity only with a hard limit
-	var target_tilt = clamp(-velocity.x * 0.005, -0.3, 0.3)
-	Cam.rotation.z = Cam.rotation.z + (target_tilt - Cam.rotation.z) * 0.05
+	# Smooth camera tilt based on left-right input direction and velocity magnitude
+	camera_tilt = clamp(-input_dir.x * velocity.length() * 0.005, -0.3, 0.3)
+	Cam.rotation.z = Cam.rotation.z + (camera_tilt - Cam.rotation.z) * 0.05
 
-	# Adjust FOV based on forward/backward velocity
-	var target_fov = 90 + clamp(velocity.z * 0.2, -20, 20)  # Base FOV is 90, adjust by max ±20
-	Cam.fov = Cam.fov + (target_fov - Cam.fov) * 0.1  # Smooth transition to target FOV
+	# Adjust FOV based on forward/backward input direction and velocity magnitude
+	camera_fov = 90 + clamp(input_dir.y * velocity.length() * 0.2, -20, 20)  # Base FOV is 90, adjust by max ±20
+	Cam.fov = Cam.fov + (camera_fov - Cam.fov) * 0.1  # Smooth transition to target FOV
 
 	move_and_slide()
 
