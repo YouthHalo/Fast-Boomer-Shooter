@@ -4,6 +4,6 @@ extends Control
 
 func _process(_delta):
 	if player and player.has_method("get_velocity"):
-		fps_label.text = "FPS: %d VEL: %s" % [Engine.get_frames_per_second(), str(player.get_velocity())]
+		fps_label.text = "FPS: %d VEL: %s" % [Engine.get_frames_per_second(), str(abs(player.velocity.x) + abs(player.velocity.y) + abs(player.velocity.z))]
 	else:
 		fps_label.text = "FPS: %d VEL: N/A" % Engine.get_frames_per_second()

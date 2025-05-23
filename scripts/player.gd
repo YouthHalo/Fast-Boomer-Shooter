@@ -19,10 +19,10 @@ var touching_wall = false
 
 const MAX_WALK_SPEED = 12
 const MAX_TOTAL_SPEED = 50
-const MAX_MOMENTUM_SPEED = 30.0
-const ACCEL = 60.0
-const AIR_ACCEL = 50.0
-const FRICTION = 20.0
+const MAX_MOMENTUM_SPEED = 22
+const ACCEL = 50.0
+const AIR_ACCEL = 2.0
+const FRICTION = 50.0
 
 var camera_tilt = 0.0
 var camera_fov = 90.0
@@ -102,10 +102,13 @@ func _physics_process(delta):
 				var speed = horizontal_velocity.length()
 				if speed > 0:
 					var slow_factor = 1.0
+					print("normal slowdown")
 					if speed > MAX_MOMENTUM_SPEED:
 						slow_factor = 2.5
+						print("fast slowdown")
 					elif speed > SPEED:
-						slow_factor = 0.5 + ((speed - SPEED) / (MAX_MOMENTUM_SPEED - SPEED)) * 1.5
+						slow_factor = 2 + ((speed - SPEED) / (MAX_MOMENTUM_SPEED - SPEED)) * 1.5
+						print("slow slowdown")
 					velocity.x = move_toward(velocity.x, 0, FRICTION * slow_factor * delta)
 					velocity.z = move_toward(velocity.z, 0, FRICTION * slow_factor * delta)
 
@@ -118,6 +121,6 @@ func _physics_process(delta):
 	camera_tilt = clamp(-input_dir.x * velocity.length() * 0.005, -0.3, 0.3)
 	Cam.rotation.z += (camera_tilt - Cam.rotation.z) * 0.05
 
-	camera_fov = 90 + clamp(input_dir.y * velocity.length() * 0.2, -20, 20)
+	camera_fov = 90 + clamp(input_dir.y * velocity.length() * -0.2, -20, 20)
 	Cam.fov += (camera_fov - Cam.fov) * 0.1
 	move_and_slide()
