@@ -18,16 +18,17 @@ var dash_velocity = Vector3.ZERO
 var touching_wall = false
 
 const MAX_WALK_SPEED = 12
-const MAX_TOTAL_SPEED = 50
+const MAX_TOTAL_SPEED = 40
 const MAX_MOMENTUM_SPEED = 22
 const ACCEL = 50.0
-const AIR_ACCEL = 2.0
+const AIR_ACCEL = 5.0
 const FRICTION = 50.0
 
 var camera_tilt = 0.0
 var camera_fov = 90.0
 
 var gravity = ProjectSettings.get_setting("physics/3d/default_gravity") * 2
+var slow_factor = 0.0
 
 func _ready():
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
@@ -68,13 +69,17 @@ func _physics_process(delta):
 		elif is_on_floor():
 			velocity.y = JUMP_VELOCITY
 
+	# Enable bhopping: if holding jump and on floor, jump every frame
+	if Input.is_action_pressed("jump") and is_on_floor():
+		velocity.y = JUMP_VELOCITY
+
 	var input_dir = Input.get_vector("left", "right", "forward", "backward")
 	var direction = (transform.basis * Vector3(input_dir.x, 0, input_dir.y)).normalized()
 
 	if Input.is_action_just_pressed("dash") and dash_timer <= 0.0:
 		var dash_dir = direction
 		if dash_dir == Vector3.ZERO:
-			dash_dir = -transform.basis.z.normalized()
+			dash_dir = - transform.basis.z.normalized()
 			dash_velocity = dash_dir * DASH_SPEED * 0.8
 		else:
 			if velocity.normalized().dot(dash_dir) < 0.9:
@@ -90,27 +95,34 @@ func _physics_process(delta):
 		dash_timer = 0
 
 		var horizontal_velocity = Vector3(velocity.x, 0, velocity.z)
+		var speed = horizontal_velocity.length()
 		if direction.length() > 0:
 			var accel = ACCEL if is_on_floor() else AIR_ACCEL
 			velocity += direction * accel * delta
 
-			if is_on_floor() and horizontal_velocity.length() > SPEED:
+			if is_on_floor() and horizontal_velocity.length() > SPEED: #Idk why i set velocity like a million times but it works i guess
 				velocity.x = move_toward(velocity.x, direction.x * SPEED, FRICTION * delta)
 				velocity.z = move_toward(velocity.z, direction.z * SPEED, FRICTION * delta)
-		else:
-			if is_on_floor():
-				var speed = horizontal_velocity.length()
-				if speed > 0:
-					var slow_factor = 1.0
-					print("normal slowdown")
-					if speed > MAX_MOMENTUM_SPEED:
-						slow_factor = 2.5
-						print("fast slowdown")
-					elif speed > SPEED:
-						slow_factor = 2 + ((speed - SPEED) / (MAX_MOMENTUM_SPEED - SPEED)) * 1.5
-						print("slow slowdown")
-					velocity.x = move_toward(velocity.x, 0, FRICTION * slow_factor * delta)
-					velocity.z = move_toward(velocity.z, 0, FRICTION * slow_factor * delta)
+		if is_on_floor() and direction.length() > 0:
+			
+			if speed > 0:
+				#normal slowdown
+				slow_factor = 0.4
+				if speed > MAX_MOMENTUM_SPEED:
+					#fast slowdown
+					slow_factor = 1.0
+				elif speed > SPEED:
+					#slow slowdown
+					slow_factor = 0.7 + ((speed - SPEED) / (MAX_MOMENTUM_SPEED - SPEED))
+				
+		elif is_on_floor() and direction.length() == 0:
+			if speed > SPEED:
+				slow_factor = 0.8
+			else:
+				slow_factor = 0.6
+		if is_on_floor():
+			velocity.x = move_toward(velocity.x, 0, FRICTION * slow_factor * delta)
+			velocity.z = move_toward(velocity.z, 0, FRICTION * slow_factor * delta)
 
 	var hvel = Vector3(velocity.x, 0, velocity.z)
 	if hvel.length() > MAX_TOTAL_SPEED:
@@ -118,9 +130,10 @@ func _physics_process(delta):
 		velocity.x = hvel.x
 		velocity.z = hvel.z
 
-	camera_tilt = clamp(-input_dir.x * velocity.length() * 0.005, -0.3, 0.3)
+#Visuals
+	camera_tilt = clamp(-input_dir.x * velocity.length() * 0.0025, -0.15, 0.15)
 	Cam.rotation.z += (camera_tilt - Cam.rotation.z) * 0.05
 
-	camera_fov = 90 + clamp(input_dir.y * velocity.length() * -0.2, -20, 20)
+	camera_fov = 90 + clamp(input_dir.y * velocity.length() * -0.1, -10, 10)
 	Cam.fov += (camera_fov - Cam.fov) * 0.1
 	move_and_slide()

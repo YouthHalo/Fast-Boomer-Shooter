@@ -1,4 +1,4 @@
-[gd_scene load_steps=5 format=3 uid="uid://bgav01dmub54l"]
+[gd_scene load_steps=6 format=3 uid="uid://bgav01dmub54l"]
 
 [ext_resource type="Script" uid="uid://bv5xpnqy1r7my" path="res://scripts/player.gd" id="1_3vyb7"]
 [ext_resource type="PackedScene" uid="uid://cnflbaff401hk" path="res://scenes/in_game_ui.tscn" id="2_g2els"]
@@ -11,6 +11,8 @@ bottom_radius = 0.01
 height = 100.0
 radial_segments = 4
 rings = 0
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_g2els"]
 
 [node name="Player" type="CharacterBody3D"]
 script = ExtResource("1_3vyb7")
@@ -32,3 +34,6 @@ top_level = true
 mesh = SubResource("CylinderMesh_g2els")
 
 [node name="In-Game UI" parent="." instance=ExtResource("2_g2els")]
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="."]
+mesh = SubResource("CapsuleMesh_g2els")
