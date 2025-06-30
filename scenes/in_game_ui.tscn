@@ -1,6 +1,17 @@
-[gd_scene load_steps=2 format=3 uid="uid://cnflbaff401hk"]
+[gd_scene load_steps=3 format=3 uid="uid://cnflbaff401hk"]
 
 [ext_resource type="Script" uid="uid://cb3po5dasouti" path="res://scripts/in_game_ui.gd" id="1_kplmn"]
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_kplmn"]
+particle_flag_align_y = true
+particle_flag_disable_z = true
+spread = 180.0
+initial_velocity_min = 5000.0
+initial_velocity_max = 5000.0
+gravity = Vector3(0, 0, 0)
+scale_min = 4.0
+scale_max = 20.0
+turbulence_noise_strength = 20.0
 
 [node name="In-Game UI" type="Control"]
 layout_mode = 3
@@ -47,3 +58,11 @@ grow_horizontal = 2
 grow_vertical = 2
 
 [node name="GPUParticles2D" type="GPUParticles2D" parent="."]
+position = Vector2(576, 324)
+emitting = false
+amount = 200
+lifetime = 0.2
+one_shot = true
+explosiveness = 1.0
+randomness = 1.0
+process_material = SubResource("ParticleProcessMaterial_kplmn")

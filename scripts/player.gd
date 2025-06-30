@@ -13,6 +13,7 @@ var air_jumps = max_air_jumps
 const DASH_SPEED = 50.0
 const DASH_TIME = 0.6
 var dash_timer = 0.0
+@export var dash_delay = 5.0
 var dash_velocity = Vector3.ZERO
 
 var touching_wall = false
@@ -29,6 +30,11 @@ var camera_fov = 90.0
 
 var gravity = ProjectSettings.get_setting("physics/3d/default_gravity") * 2
 var slow_factor = 0.0
+
+var input_dir
+var direction
+
+
 
 func _ready():
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
@@ -64,8 +70,11 @@ func _physics_process(delta):
 			if touching_wall:
 				var wall_normal = get_wall_normal()
 				velocity = wall_normal * JUMP_VELOCITY * 2
-			velocity.y = JUMP_VELOCITY * 0.85
-			air_jumps -= 1
+				velocity.y = JUMP_VELOCITY #*0.85
+			else:
+				velocity = velocity + direction * 10
+				velocity.y = JUMP_VELOCITY * 0.85
+				air_jumps -= 1
 		elif is_on_floor():
 			velocity.y = JUMP_VELOCITY
 
@@ -73,8 +82,10 @@ func _physics_process(delta):
 	if Input.is_action_pressed("jump") and is_on_floor():
 		velocity.y = JUMP_VELOCITY
 
-	var input_dir = Input.get_vector("left", "right", "forward", "backward")
-	var direction = (transform.basis * Vector3(input_dir.x, 0, input_dir.y)).normalized()
+	input_dir = Input.get_vector("left", "right", "forward", "backward")
+	direction = (transform.basis * Vector3(input_dir.x, 0, input_dir.y)).normalized()
+
+ ##Something regarding the movement system is messing up and making the player shimmy. need to fix
 
 	if Input.is_action_just_pressed("dash") and dash_timer <= 0.0:
 		var dash_dir = direction

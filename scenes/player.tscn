@@ -25,12 +25,10 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7, 0)
 fov = 90.0
 
 [node name="RayCast3D" type="RayCast3D" parent="Camera3D"]
-exclude_parent = false
 target_position = Vector3(0, 0, -100)
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="Camera3D/RayCast3D"]
-transform = Transform3D(1, 0, 0, 0, -4.37114e-08, -1, 0, 1, -4.37114e-08, 0, 0.7, -50)
-top_level = true
+transform = Transform3D(1, 0, 0, 0, -4.37114e-08, -1, 0, 1, -4.37114e-08, 0, 0, -50)
 mesh = SubResource("CylinderMesh_g2els")
 
 [node name="In-Game UI" parent="." instance=ExtResource("2_g2els")]
