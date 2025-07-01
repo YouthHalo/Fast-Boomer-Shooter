@@ -45,7 +45,7 @@ func _ready():
 func _input(event):
 	#for one time presses only
 	#do i add jump and dash here????
-
+	
 	if event is InputEventMouseMotion:
 		rotation.y -= event.relative.x / mouse_sens
 		Cam.rotation.x -= event.relative.y / mouse_sens
@@ -56,7 +56,7 @@ func _input(event):
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
 		if is_inside_tree():
 			var projectile = projectile_scene.instantiate()
-			var muzzle_position = Cam.global_transform.origin + -Cam.global_transform.basis.z * 1.5
+			var muzzle_position = Cam.global_transform.origin
 			# Combine player Y rotation with camera X rotation manually
 			var forward = Vector3(0, 0, -1)
 			# Apply camera X rotation first
@@ -74,6 +74,12 @@ func _physics_process(delta):
 		velocity.y -= gravity * delta
 	elif air_jumps < max_air_jumps:
 		air_jumps = max_air_jumps
+
+		if is_on_wall():
+			velocity.y += 40
+			print("Wall Jump Gravity")
+		else:
+			gravity = ProjectSettings.get_setting("physics/3d/default_gravity") # 19.6 (9.8 * 2)
 
 	if not is_on_floor() and is_on_wall() and not touching_wall:
 		touching_wall = true
