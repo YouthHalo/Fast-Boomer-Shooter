@@ -20,9 +20,15 @@ func _process(delta: float) -> void:
 		# Move the projectile in the direction
 		translate(direction * speed * delta)
 	if raycast.is_colliding():
+		var collider = raycast.get_collider()
+		if collider:
+			print("Hit: ", collider.name)
 		mesh.visible = false
+		explosion.restart()
 		explosion.emitting = true
 		print("KABOOM!")
-		get_tree().create_timer(0.5)  # Adjust the delay as needed
+		raycast.enabled = false
+		await get_tree().create_timer(0.5).timeout  # Adjust the delay as needed
+		
 		#explosion code here
 		queue_free()

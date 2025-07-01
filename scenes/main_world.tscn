@@ -1,6 +1,7 @@
-[gd_scene load_steps=10 format=3 uid="uid://cv72v1nlu10ia"]
+[gd_scene load_steps=11 format=3 uid="uid://cv72v1nlu10ia"]
 
 [ext_resource type="PackedScene" uid="uid://bgav01dmub54l" path="res://scenes/player.tscn" id="1_6x5uh"]
+[ext_resource type="PackedScene" uid="uid://6amix7kcu2lq" path="res://scenes/pause_menu.tscn" id="2_tt5ry"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_6x5uh"]
 sky_horizon_color = Color(0.662243, 0.671743, 0.686743, 1)
@@ -80,3 +81,5 @@ mesh = SubResource("PrismMesh_wjoj8")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 29.9725, 4.49119, 18.9842)
 use_collision = true
 mesh = SubResource("PrismMesh_bdp8l")
+
+[node name="Pause Menu" parent="." instance=ExtResource("2_tt5ry")]

@@ -8,12 +8,10 @@ height = 0.4
 radial_segments = 16
 
 [sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_c8fcr"]
-angle_min = -720.0
-angle_max = 720.0
-inherit_velocity_ratio = 1.0
+particle_flag_rotate_y = true
 spread = 180.0
-initial_velocity_min = 20.69
-initial_velocity_max = 20.69
+initial_velocity_min = 15.0
+initial_velocity_max = 30.0
 
 [sub_resource type="PlaneMesh" id="PlaneMesh_c8fcr"]
 size = Vector2(0.2, 0.2)
@@ -29,8 +27,12 @@ mesh = SubResource("CapsuleMesh_q3m7n")
 
 [node name="GPUParticles3D" type="GPUParticles3D" parent="."]
 transform = Transform3D(1, -2.11758e-22, -4.23516e-22, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+emitting = false
 amount = 50
-explosiveness = 1.0
+lifetime = 4.0
+interp_to_end = 1.0
+one_shot = true
+explosiveness = 0.96
 process_material = SubResource("ParticleProcessMaterial_c8fcr")
 draw_pass_1 = SubResource("PlaneMesh_c8fcr")
 

@@ -119,8 +119,9 @@ func _physics_process(delta):
 
 	if dash_timer > 0.0 and dash_timer >= (DASH_TIME / 1.5):
 		dash_timer -= delta
-		velocity.x = dash_velocity.x
-		velocity.z = dash_velocity.z
+		velocity = Vector3(dash_velocity.x, velocity.y, dash_velocity.z)
+		#velocity.x = dash_velocity.x
+		#velocity.z = dash_velocity.z
 	else:
 		dash_timer = 0
 
@@ -131,8 +132,13 @@ func _physics_process(delta):
 			velocity += direction * accel * delta
 
 			if is_on_floor() and horizontal_velocity.length() > SPEED: # Idk why i set velocity like a million times but it works i guess
-				velocity.x = move_toward(velocity.x, direction.x * SPEED, FRICTION * delta)
-				velocity.z = move_toward(velocity.z, direction.z * SPEED, FRICTION * delta)
+				velocity = Vector3(
+					move_toward(velocity.x, direction.x * SPEED, FRICTION * delta),
+					velocity.y,
+					move_toward(velocity.z, direction.z * SPEED, FRICTION * delta)
+				)
+				#velocity.x = move_toward(velocity.x, direction.x * SPEED, FRICTION * delta)
+				#velocity.z = move_toward(velocity.z, direction.z * SPEED, FRICTION * delta)
 		if is_on_floor() and direction.length() > 0:
 			if speed > 0:
 				#normal slowdown
@@ -150,14 +156,20 @@ func _physics_process(delta):
 			else:
 				slow_factor = 0.6
 		if is_on_floor():
-			velocity.x = move_toward(velocity.x, 0, FRICTION * slow_factor * delta)
-			velocity.z = move_toward(velocity.z, 0, FRICTION * slow_factor * delta)
+			velocity = Vector3(
+				move_toward(velocity.x, 0, FRICTION * slow_factor * delta),
+				velocity.y,
+				move_toward(velocity.z, 0, FRICTION * slow_factor * delta)
+			)
+			#velocity.x = move_toward(velocity.x, 0, FRICTION * slow_factor * delta)
+			#velocity.z = move_toward(velocity.z, 0, FRICTION * slow_factor * delta)
 
 	var hvel = Vector3(velocity.x, 0, velocity.z)
 	if hvel.length() > MAX_TOTAL_SPEED:
 		hvel = hvel.normalized() * MAX_TOTAL_SPEED
-		velocity.x = hvel.x
-		velocity.z = hvel.z
+		velocity = Vector3(hvel.x, velocity.y, hvel.z)
+		#velocity.x = hvel.x
+		#velocity.z = hvel.z
 
 #Visuals
 	camera_tilt = clamp(-input_dir.x * velocity.length() * 0.0025, -0.15, 0.15)
