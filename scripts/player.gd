@@ -28,12 +28,11 @@ const FRICTION = 50.0
 var camera_tilt = 0.0
 var camera_fov = 90.0
 
-var gravity = ProjectSettings.get_setting("physics/3d/default_gravity") #19.6 (9.8 * 2)
+var gravity = ProjectSettings.get_setting("physics/3d/default_gravity") # 19.6 (9.8 * 2)
 var slow_factor = 0.0
 
 var input_dir
 var direction
-
 
 
 func _ready():
@@ -70,7 +69,7 @@ func _physics_process(delta):
 			if touching_wall:
 				var wall_normal = get_wall_normal()
 				velocity = wall_normal * JUMP_VELOCITY * 2
-				velocity.y = JUMP_VELOCITY #*0.85
+				velocity.y = JUMP_VELOCITY # *0.85
 			else:
 				velocity = velocity + direction * 10
 				velocity.y = JUMP_VELOCITY * 0.85
@@ -111,11 +110,10 @@ func _physics_process(delta):
 			var accel = ACCEL if is_on_floor() else AIR_ACCEL
 			velocity += direction * accel * delta
 
-			if is_on_floor() and horizontal_velocity.length() > SPEED: #Idk why i set velocity like a million times but it works i guess
+			if is_on_floor() and horizontal_velocity.length() > SPEED: # Idk why i set velocity like a million times but it works i guess
 				velocity.x = move_toward(velocity.x, direction.x * SPEED, FRICTION * delta)
 				velocity.z = move_toward(velocity.z, direction.z * SPEED, FRICTION * delta)
 		if is_on_floor() and direction.length() > 0:
-			
 			if speed > 0:
 				#normal slowdown
 				slow_factor = 0.4
