@@ -54,20 +54,16 @@ func _input(event):
 		if is_inside_tree():
 			var projectile = projectile_scene.instantiate()
 			var muzzle_position = Cam.global_transform.origin + -Cam.global_transform.basis.z * 1.5
-			projectile.global_transform.origin = muzzle_position
 			# Combine player Y rotation with camera X rotation manually
 			var forward = Vector3(0, 0, -1)
 			# Apply camera X rotation first
-			forward = forward.rotated(Vector3.RIGHT, Cam.rotation.x)
+			forward = forward.rotated(Vector3.RIGHT, Cam.rotation.x/2)
 			# Then apply player Y rotation
 			forward = forward.rotated(Vector3.UP, rotation.y/2)
 			projectile.direction = forward.normalized()
 			
-			# Create the rotation using Euler angles to avoid unwanted roll
-			var euler_rotation = Vector3(Cam.rotation.x, rotation.y/2, 0)
-			projectile.rotation_euler = euler_rotation
-			
 			get_tree().current_scene.add_child(projectile)
+			projectile.global_transform.origin = muzzle_position #global should be after added to tree
 
 
 func _physics_process(delta):
@@ -108,7 +104,7 @@ func _physics_process(delta):
 	input_dir = Input.get_vector("left", "right", "forward", "backward")
 	direction = (transform.basis * Vector3(input_dir.x, 0, input_dir.y)).normalized()
 
- ##Something regarding the movement system is messing up and making the player shimmy. need to fix
+##Something regarding the movement system is messing up and making the player shimmy. need to fix
 
 	if Input.is_action_just_pressed("dash") and dash_timer <= 0.0:
 		var dash_dir = direction
