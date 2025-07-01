@@ -1,7 +1,10 @@
-[gd_scene load_steps=6 format=3 uid="uid://bgav01dmub54l"]
+[gd_scene load_steps=7 format=3 uid="uid://bgav01dmub54l"]
 
 [ext_resource type="Script" uid="uid://bv5xpnqy1r7my" path="res://scripts/player.gd" id="1_3vyb7"]
 [ext_resource type="PackedScene" uid="uid://cnflbaff401hk" path="res://scenes/in_game_ui.tscn" id="2_g2els"]
+[ext_resource type="PackedScene" uid="uid://6amix7kcu2lq" path="res://scenes/pause_menu.tscn" id="3_qhqgy"]
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_g2els"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_g2els"]
 
@@ -12,10 +15,11 @@ height = 100.0
 radial_segments = 4
 rings = 0
 
-[sub_resource type="CapsuleMesh" id="CapsuleMesh_g2els"]
-
 [node name="Player" type="CharacterBody3D"]
 script = ExtResource("1_3vyb7")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="."]
+mesh = SubResource("CapsuleMesh_g2els")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="."]
 shape = SubResource("CapsuleShape3D_g2els")
@@ -34,5 +38,4 @@ mesh = SubResource("CylinderMesh_g2els")
 
 [node name="In-Game UI" parent="." instance=ExtResource("2_g2els")]
 
-[node name="MeshInstance3D" type="MeshInstance3D" parent="."]
-mesh = SubResource("CapsuleMesh_g2els")
+[node name="Pause Menu" parent="." instance=ExtResource("3_qhqgy")]

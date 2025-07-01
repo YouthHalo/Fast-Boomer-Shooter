@@ -43,6 +43,9 @@ func _ready():
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 
 func _input(event):
+	#for one time presses only
+	#do i add jump and dash here????
+
 	if event is InputEventMouseMotion:
 		rotation.y -= event.relative.x / mouse_sens
 		Cam.rotation.x -= event.relative.y / mouse_sens
@@ -105,6 +108,8 @@ func _physics_process(delta):
 	direction = (transform.basis * Vector3(input_dir.x, 0, input_dir.y)).normalized()
 
 ##Something regarding the movement system is messing up and making the player shimmy. need to fix
+#It was NOT the fact that the velocities were seperate, still do not know why it was happening
+#possible due to move_toward being used on the velocity.x and velocity.z separately
 
 	if Input.is_action_just_pressed("dash") and dash_timer <= 0.0:
 		var dash_dir = direction
@@ -170,11 +175,14 @@ func _physics_process(delta):
 		velocity = Vector3(hvel.x, velocity.y, hvel.z)
 		#velocity.x = hvel.x
 		#velocity.z = hvel.z
+		
+	camera_effects()
+	move_and_slide()
 
-#Visuals
+
+func camera_effects() -> void:
 	camera_tilt = clamp(-input_dir.x * velocity.length() * 0.0025, -0.15, 0.15)
 	Cam.rotation.z += (camera_tilt - Cam.rotation.z) * 0.05
 
 	camera_fov = 90 + clamp(input_dir.y * velocity.length() * -0.1, -10, 10)
 	Cam.fov += (camera_fov - Cam.fov) * 0.1
-	move_and_slide()

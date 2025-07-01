@@ -1,34 +1,66 @@
 extends Node3D
 
 @export var speed: float = 5.0
-@onready var raycast = $RayCast3D
 @onready var mesh = $"3DModel"
 @onready var explosion = $GPUParticles3D
+@onready var explosion_area = $ExplosionArea
+@onready var hitbox = $Hitbox
 
+var currently_blowing_up: bool = false
 var direction: Vector3
 var rotation_euler: Vector3
 
 func _ready() -> void:
 	look_at(global_transform.origin + direction, Vector3.UP)
-	mesh.rotation = Vector3.FORWARD
-	mesh.rotate(Vector3.RIGHT, -PI)
-	# Align the mesh so its local Y axis points in the direction of travel
-	pass
 
 func _process(delta: float) -> void:
-	if direction != Vector3.ZERO and not raycast.is_colliding():
-		# Move the projectile in the direction
-		translate(direction * speed * delta)
-	if raycast.is_colliding():
-		var collider = raycast.get_collider()
-		if collider:
+	if hitbox.get_overlapping_bodies().size() > 0 and not currently_blowing_up:
+		var collider = hitbox.get_overlapping_bodies()[0]
+		if collider and collider.name != "Player":
 			print("Hit: ", collider.name)
-		mesh.visible = false
-		explosion.restart()
-		explosion.emitting = true
-		print("KABOOM!")
-		raycast.enabled = false
-		await get_tree().create_timer(0.5).timeout  # Adjust the delay as needed
-		
-		#explosion code here
-		queue_free()
+			mesh.visible = false
+			explosion.emitting = true
+
+			print("KABOOM!")
+			currently_blowing_up = true
+
+			var explosion_radius = 6.0
+			var explosion_force = 15.0
+			var origin = global_transform.origin
+
+			# Update explosion area to match radius (if you want visual/debug overlap)
+			explosion_area.scale = Vector3.ONE * (explosion_radius / 2.0)
+			explosion_area.global_transform.origin = origin
+
+			# Apply explosion impulse
+			apply_explosion_impulse(origin, explosion_force, explosion_radius)
+
+			await get_tree().create_timer(0.5).timeout
+			queue_free()
+	else:
+		if direction != Vector3.ZERO:
+			translate(direction * speed * delta)
+
+func apply_explosion_impulse(explosion_origin: Vector3, explosion_force: float, explosion_radius: float) -> void:
+	for body in explosion_area.get_overlapping_bodies():
+		if not (body is RigidBody3D or body is CharacterBody3D):
+			continue
+
+		var body_pos = body.global_transform.origin
+		var to_body = body_pos - explosion_origin
+		var distance = to_body.length()
+		if distance == 0.0 or distance > explosion_radius:
+			continue
+
+		var direction = to_body.normalized()
+		var falloff = 1.0 - clamp(distance / explosion_radius, 0.0, 1.0)
+		var force = direction * explosion_force * falloff
+
+		# Amplify for player if needed
+		if body.name == "Player":
+			force *= 2.0
+
+		if body is RigidBody3D:
+			body.apply_impulse(Vector3.ZERO, force)
+		elif body is CharacterBody3D and "velocity" in body:
+			body.velocity += force
