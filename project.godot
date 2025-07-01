@@ -69,3 +69,4 @@ shoot={
 [physics]
 
 3d/default_gravity=19.6
+common/physics_interpolation=true

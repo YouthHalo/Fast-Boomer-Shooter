@@ -1,6 +1,7 @@
 extends CharacterBody3D
 
 @onready var Cam = $Camera3D as Camera3D
+@onready var Raycast = $Camera3D/RayCast3D as RayCast3D
 var mouse_sens = 600
 var mouse_relative_x = 0
 var mouse_relative_y = 0
@@ -31,6 +32,9 @@ var camera_fov = 90.0
 var gravity = ProjectSettings.get_setting("physics/3d/default_gravity") # 19.6 (9.8 * 2)
 var slow_factor = 0.0
 
+@onready var projectile_scene = preload("res://scenes/projectile.tscn")
+
+
 var input_dir
 var direction
 
@@ -45,6 +49,26 @@ func _input(event):
 		Cam.rotation.x = clamp(Cam.rotation.x, deg_to_rad(-90), deg_to_rad(90))
 		mouse_relative_x = clamp(event.relative.x, -50, 50)
 		mouse_relative_y = clamp(event.relative.y, -50, 10)
+	
+	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
+		if is_inside_tree():
+			var projectile = projectile_scene.instantiate()
+			var muzzle_position = Cam.global_transform.origin + -Cam.global_transform.basis.z * 1.5
+			projectile.global_transform.origin = muzzle_position
+			# Combine player Y rotation with camera X rotation manually
+			var forward = Vector3(0, 0, -1)
+			# Apply camera X rotation first
+			forward = forward.rotated(Vector3.RIGHT, Cam.rotation.x)
+			# Then apply player Y rotation
+			forward = forward.rotated(Vector3.UP, rotation.y/2)
+			projectile.direction = forward.normalized()
+			
+			# Create the rotation using Euler angles to avoid unwanted roll
+			var euler_rotation = Vector3(Cam.rotation.x, rotation.y/2, 0)
+			projectile.rotation_euler = euler_rotation
+			
+			get_tree().current_scene.add_child(projectile)
+
 
 func _physics_process(delta):
 	if not is_on_floor():
