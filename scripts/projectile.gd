@@ -17,11 +17,8 @@ func _process(delta: float) -> void:
 	if hitbox.get_overlapping_bodies().size() > 0 and not currently_blowing_up:
 		var collider = hitbox.get_overlapping_bodies()[0]
 		if collider and collider.name != "Player":
-			print("Hit: ", collider.name)
 			mesh.visible = false
 			explosion.emitting = true
-
-			print("KABOOM!")
 			currently_blowing_up = true
 
 			var explosion_radius = 6.0
