@@ -28,7 +28,7 @@ const FRICTION = 50.0
 var camera_tilt = 0.0
 var camera_fov = 90.0
 
-var gravity = ProjectSettings.get_setting("physics/3d/default_gravity") * 2
+var gravity = ProjectSettings.get_setting("physics/3d/default_gravity") #19.6 (9.8 * 2)
 var slow_factor = 0.0
 
 var input_dir
