@@ -2,6 +2,8 @@ extends CharacterBody3D
 
 @onready var Cam = $Camera3D as Camera3D
 @onready var Raycast = $Camera3D/RayCast3D as RayCast3D
+@onready var GroundSlamArea = $GroundSlamArea as Area3D
+
 var mouse_sens = 600
 var mouse_relative_x = 0
 var mouse_relative_y = 0
@@ -18,6 +20,7 @@ var dash_timer = 0.0
 var dash_velocity = Vector3.ZERO
 
 var touching_wall = false
+var ground_slamming = false
 
 const MAX_WALK_SPEED = 12
 const MAX_TOTAL_SPEED = 40
@@ -69,7 +72,47 @@ func _input(event):
 			projectile.global_transform.origin = muzzle_position #global should be after added to tree
 
 
+
 func _physics_process(delta):
+
+	if Input.is_action_just_pressed("slide"):
+		if is_on_floor():
+			pass # TODO
+		else:
+			#drop down fast and lose all horizontal momentum
+			velocity.y = -SPEED * 7
+			velocity.x = 0
+			velocity.z = 0
+			ground_slamming = true
+	
+
+	if is_on_floor and ground_slamming:
+			# Impulse nearby characters and rigidbodies outwards
+			var explosion_origin = GroundSlamArea.global_transform.origin
+			var explosion_radius = 6
+			var explosion_force = 25.0
+
+			for body in GroundSlamArea.get_overlapping_bodies():
+				if body == self:
+					continue
+				if not (body is RigidBody3D or body is CharacterBody3D):
+					continue
+
+				var body_pos = body.global_transform.origin
+				var to_body = body_pos - explosion_origin
+				var distance = to_body.length()
+				if distance == 0.0 or distance > explosion_radius:
+					continue
+
+				var explosion_direction = to_body.normalized()
+				var falloff = 1.0 - clamp(distance / explosion_radius, 0.0, 1.0) #this feels inverted for some reason. Could just be me
+				var force = explosion_direction * explosion_force * falloff
+
+				if body is RigidBody3D:
+					body.apply_central_impulse(force)
+				elif body is CharacterBody3D and "velocity" in body:
+					body.velocity += force
+	
 	if not is_on_floor():
 		velocity.y -= gravity * delta
 	elif air_jumps < max_air_jumps:
@@ -94,6 +137,7 @@ func _physics_process(delta):
 		velocity = Vector3.ZERO
 
 	if Input.is_action_just_pressed("jump") and air_jumps > 0:
+		ground_slamming = false
 		if not is_on_floor():
 			if touching_wall:
 				var wall_normal = get_wall_normal()
@@ -103,7 +147,7 @@ func _physics_process(delta):
 				velocity = velocity + direction * 10
 				velocity.y = JUMP_VELOCITY * 0.85
 				air_jumps -= 1
-		elif is_on_floor():
+		else:
 			velocity.y = JUMP_VELOCITY
 
 	# Enable bhopping: if holding jump and on floor, jump every frame

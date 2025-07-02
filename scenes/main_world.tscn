@@ -1,6 +1,7 @@
-[gd_scene load_steps=12 format=3 uid="uid://cv72v1nlu10ia"]
+[gd_scene load_steps=13 format=3 uid="uid://cv72v1nlu10ia"]
 
 [ext_resource type="PackedScene" uid="uid://bgav01dmub54l" path="res://scenes/player.tscn" id="1_6x5uh"]
+[ext_resource type="Texture2D" uid="uid://ev3l80lqjmok" path="res://icon.svg" id="1_tt5ry"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_6x5uh"]
 sky_horizon_color = Color(0.662243, 0.671743, 0.686743, 1)
@@ -17,6 +18,7 @@ glow_enabled = true
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_6x5uh"]
 albedo_color = Color(0, 1, 0, 1)
+albedo_texture = ExtResource("1_tt5ry")
 metallic = 0.5
 
 [sub_resource type="PrismMesh" id="PrismMesh_6x5uh"]

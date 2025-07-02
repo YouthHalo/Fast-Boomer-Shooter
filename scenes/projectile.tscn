@@ -1,4 +1,4 @@
-[gd_scene load_steps=7 format=3 uid="uid://bx0a5ulxrtprk"]
+[gd_scene load_steps=10 format=3 uid="uid://bx0a5ulxrtprk"]
 
 [ext_resource type="Script" uid="uid://djhpviq1d4wkv" path="res://scripts/projectile.gd" id="1_c8fcr"]
 
@@ -7,6 +7,20 @@ radius = 0.2
 height = 0.4
 radial_segments = 8
 rings = 8
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_q3m7n"]
+spread = 0.0
+gravity = Vector3(0, 0, 0)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_c8fcr"]
+albedo_color = Color(0, 0, 0, 1)
+
+[sub_resource type="SphereMesh" id="SphereMesh_softn"]
+material = SubResource("StandardMaterial3D_c8fcr")
+radius = 0.1
+height = 0.2
+radial_segments = 4
+rings = 2
 
 [sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_c8fcr"]
 particle_flag_rotate_y = true
@@ -18,7 +32,7 @@ initial_velocity_max = 30.0
 size = Vector2(0.2, 0.2)
 
 [sub_resource type="SphereShape3D" id="SphereShape3D_c8fcr"]
-radius = 6.0
+radius = 8.0
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_c8fcr"]
 size = Vector3(0.5, 0.5, 0.5)
@@ -31,7 +45,13 @@ script = ExtResource("1_c8fcr")
 transform = Transform3D(0.999999, 0, 0, 0, -4.37114e-08, 1, 0, -0.999999, -4.37114e-08, 0, 0, 0)
 mesh = SubResource("SphereMesh_c8fcr")
 
-[node name="GPUParticles3D" type="GPUParticles3D" parent="."]
+[node name="GPUParticles3D" type="GPUParticles3D" parent="3DModel"]
+amount = 4
+lifetime = 0.1
+process_material = SubResource("ParticleProcessMaterial_q3m7n")
+draw_pass_1 = SubResource("SphereMesh_softn")
+
+[node name="ExplosionParticles" type="GPUParticles3D" parent="."]
 transform = Transform3D(1, -2.11758e-22, -4.23516e-22, 0, 1, 0, 0, 0, 1, 0, 0, 0)
 emitting = false
 amount = 50

@@ -2,12 +2,9 @@ extends Node3D
 
 @export var speed: float = 50.0
 @onready var mesh = $"3DModel"
-@onready var explosion = $GPUParticles3D
+@onready var explosion = $ExplosionParticles
 @onready var explosion_area = $ExplosionArea
 @onready var hitbox = $Hitbox
-
-var explosion_radius = 6.0
-var explosion_force = 15.0
 
 var currently_blowing_up: bool = false
 var direction: Vector3
@@ -25,10 +22,10 @@ func _process(delta: float) -> void:
 			explosion.emitting = true
 			currently_blowing_up = true
 
-
+			var explosion_radius = 8.0
+			var explosion_force = 60.0
 			var origin = global_transform.origin
 
-			# Update explosion area to match radius (if you want visual/debug overlap)
 			explosion_area.scale = Vector3.ONE * (explosion_radius / 2.0)
 			explosion_area.global_transform.origin = origin
 
@@ -59,12 +56,11 @@ func apply_explosion_impulse(explosion_origin: Vector3, explosion_force: float, 
 		var falloff = 1.0 - clamp(distance / explosion_radius, 0.0, 1.0)
 		var force = explosion_direction * explosion_force * falloff
 
-		# Amplify for player if needed
 		if body.name == "Player":
-			force *= 1.0
+			force *= 0.75
 
 		if body is RigidBody3D:
-			# Use apply_central_impulse to avoid excessive spinning
 			body.apply_central_impulse(force)
 		elif body is CharacterBody3D and "velocity" in body:
 			body.velocity += force
+			
