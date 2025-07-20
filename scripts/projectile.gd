@@ -14,7 +14,7 @@ func _ready() -> void:
 	look_at(global_transform.origin + direction, Vector3.UP)
 	pass
 
-func _process(delta: float) -> void:
+func _physics_process(delta: float) -> void:
 	if hitbox.get_overlapping_bodies().size() > 0 and not currently_blowing_up:
 		var collider = hitbox.get_overlapping_bodies()[0]
 		if collider and collider.name != "Player":

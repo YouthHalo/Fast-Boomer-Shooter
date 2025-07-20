@@ -9,7 +9,7 @@ var mouse_relative_x = 0
 var mouse_relative_y = 0
 
 const SPEED = 12.0
-const JUMP_VELOCITY = 9
+const JUMP_VELOCITY = 9.0
 @export var max_air_jumps = 1
 var air_jumps = max_air_jumps
 
@@ -32,66 +32,70 @@ const FRICTION = 50.0
 var camera_tilt = 0.0
 var camera_fov = 90.0
 
-var gravity = ProjectSettings.get_setting("physics/3d/default_gravity") # 19.6 (9.8 * 2)
+var gravity = ProjectSettings.get_setting("physics/3d/default_gravity")
 var slow_factor = 0.0
+var groundslamheight = 0.0
 
 @onready var projectile_scene = preload("res://scenes/projectile.tscn")
 
-
 var input_dir
 var direction
-
 
 func _ready():
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 
 func _input(event):
-	#for one time presses only
-	#do i add jump and dash here????
-	
 	if event is InputEventMouseMotion:
 		rotation.y -= event.relative.x / mouse_sens
 		Cam.rotation.x -= event.relative.y / mouse_sens
 		Cam.rotation.x = clamp(Cam.rotation.x, deg_to_rad(-90), deg_to_rad(90))
 		mouse_relative_x = clamp(event.relative.x, -50, 50)
 		mouse_relative_y = clamp(event.relative.y, -50, 10)
-	
+
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
 		if is_inside_tree():
 			var projectile = projectile_scene.instantiate()
 			var muzzle_position = Cam.global_transform.origin
-			# Combine player Y rotation with camera X rotation manually
-			var forward = Vector3(0, 0, -1)
-			# Apply camera X rotation first
-			forward = forward.rotated(Vector3.RIGHT, Cam.rotation.x/2)
-			# Then apply player Y rotation
-			forward = forward.rotated(Vector3.UP, rotation.y/2)
-			projectile.direction = forward.normalized()
+			#var forward = Vector3(0, 0, -1)
+			#forward = forward.rotated(Vector3.RIGHT, Cam.rotation.x / 2)
+			#forward = forward.rotated(Vector3.UP, rotation.y / 2)
+			#projectile.direction = forward.normalized()
 			
-			get_tree().current_scene.add_child(projectile)
-			projectile.global_transform.origin = muzzle_position #global should be after added to tree
+			#TODO i need to be able to divide the yaw and pitch of the camera by 2 to get the projectile to shoot straight BUT STILL USE THE CAMERA'S GLOBAL DIRECTION THATS THE BEST WORKING WAY SO FAR
+		
+			var camera_basis = Cam.global_transform.basis
+			projectile.direction = -camera_basis.z.normalized()
+			projectile.global_transform.origin = Cam.global_transform.origin
 
+			get_tree().current_scene.add_child(projectile)
+
+
+
+			print("Projectile Direction: ", projectile.direction)
+			print("Player rotation: ", rotation)
+			print("Camera rotation: ", Cam.rotation)
 
 
 func _physics_process(delta):
 
 	if Input.is_action_just_pressed("slide"):
 		if is_on_floor():
-			pass # TODO
+			pass
 		else:
-			#drop down fast and lose all horizontal momentum
-			velocity.y = -SPEED * 7
+			velocity.y = - SPEED * 7
 			velocity.x = 0
 			velocity.z = 0
 			ground_slamming = true
+			groundslamheight = position.y
 	
 
-	if is_on_floor and ground_slamming:
+	if is_on_floor() and ground_slamming:
 			# Impulse nearby characters and rigidbodies outwards
 			var explosion_origin = GroundSlamArea.global_transform.origin
 			var explosion_radius = 6
-			var explosion_force = 25.0
-
+			var travel_distance = min(position.distance_to(Vector3(position.x, groundslamheight, position.z)), 10.0)
+			var explosion_force = lerp(5.0, 35.0, travel_distance / 10.0)
+			print("Explosion Force: ", explosion_force)
 			for body in GroundSlamArea.get_overlapping_bodies():
 				if body == self:
 					continue
@@ -112,12 +116,13 @@ func _physics_process(delta):
 					body.apply_central_impulse(force)
 				elif body is CharacterBody3D and "velocity" in body:
 					body.velocity += force
+			#todo: camera effect
+			ground_slamming = false
 	
 	if not is_on_floor():
 		velocity.y -= gravity * delta
 	elif air_jumps < max_air_jumps:
 		air_jumps = max_air_jumps
-
 		if is_on_wall():
 			velocity.y += 40
 			print("Wall Jump Gravity")
@@ -142,24 +147,21 @@ func _physics_process(delta):
 			if touching_wall:
 				var wall_normal = get_wall_normal()
 				velocity = wall_normal * JUMP_VELOCITY * 2
-				velocity.y = JUMP_VELOCITY # *0.85
+				velocity.y = JUMP_VELOCITY
 			else:
-				velocity = velocity + direction * 10
+				velocity += direction * 10
 				velocity.y = JUMP_VELOCITY * 0.85
 				air_jumps -= 1
 		else:
 			velocity.y = JUMP_VELOCITY
 
-	# Enable bhopping: if holding jump and on floor, jump every frame
 	if Input.is_action_pressed("jump") and is_on_floor():
 		velocity.y = JUMP_VELOCITY
 
 	input_dir = Input.get_vector("left", "right", "forward", "backward")
 	direction = (transform.basis * Vector3(input_dir.x, 0, input_dir.y)).normalized()
 
-##Something regarding the movement system is messing up and making the player shimmy. need to fix
-#It was NOT the fact that the velocities were seperate, still do not know why it was happening
-#possible due to move_toward being used on the velocity.x and velocity.z separately
+#Shimmy seems to be fixed
 
 	if Input.is_action_just_pressed("dash") and dash_timer <= 0.0:
 		var dash_dir = direction
@@ -185,15 +187,12 @@ func _physics_process(delta):
 		if direction.length() > 0:
 			var accel = ACCEL if is_on_floor() else AIR_ACCEL
 			velocity += direction * accel * delta
+			if is_on_floor() and horizontal_velocity.length() > SPEED:
+				var hvel = Vector3(velocity.x, 0, velocity.z)
+				hvel = hvel.move_toward(direction * SPEED, FRICTION * delta)
+				velocity.x = hvel.x
+				velocity.z = hvel.z
 
-			if is_on_floor() and horizontal_velocity.length() > SPEED: # Idk why i set velocity like a million times but it works i guess
-				velocity = Vector3(
-					move_toward(velocity.x, direction.x * SPEED, FRICTION * delta),
-					velocity.y,
-					move_toward(velocity.z, direction.z * SPEED, FRICTION * delta)
-				)
-				#velocity.x = move_toward(velocity.x, direction.x * SPEED, FRICTION * delta)
-				#velocity.z = move_toward(velocity.z, direction.z * SPEED, FRICTION * delta)
 		if is_on_floor() and direction.length() > 0:
 			if speed > 0:
 				#normal slowdown
@@ -204,31 +203,27 @@ func _physics_process(delta):
 				elif speed > SPEED:
 					#slow slowdown
 					slow_factor = 0.7 + ((speed - SPEED) / (MAX_MOMENTUM_SPEED - SPEED))
-				
 		elif is_on_floor() and direction.length() == 0:
 			if speed > SPEED:
 				slow_factor = 0.8
 			else:
 				slow_factor = 0.6
+
+		# --- friction fix: apply to full vector
 		if is_on_floor():
-			velocity = Vector3(
-				move_toward(velocity.x, 0, FRICTION * slow_factor * delta),
-				velocity.y,
-				move_toward(velocity.z, 0, FRICTION * slow_factor * delta)
-			)
-			#velocity.x = move_toward(velocity.x, 0, FRICTION * slow_factor * delta)
-			#velocity.z = move_toward(velocity.z, 0, FRICTION * slow_factor * delta)
+			var hvel = Vector3(velocity.x, 0, velocity.z)
+			hvel = hvel.move_toward(Vector3.ZERO, FRICTION * slow_factor * delta)
+			velocity.x = hvel.x
+			velocity.z = hvel.z
 
 	var hvel = Vector3(velocity.x, 0, velocity.z)
 	if hvel.length() > MAX_TOTAL_SPEED:
 		hvel = hvel.normalized() * MAX_TOTAL_SPEED
-		velocity = Vector3(hvel.x, velocity.y, hvel.z)
-		#velocity.x = hvel.x
-		#velocity.z = hvel.z
-		
+		velocity.x = hvel.x
+		velocity.z = hvel.z
+
 	camera_effects()
 	move_and_slide()
-
 
 func camera_effects() -> void:
 	camera_tilt = clamp(-input_dir.x * velocity.length() * 0.0025, -0.15, 0.15)
