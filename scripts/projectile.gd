@@ -11,11 +11,12 @@ var direction: Vector3
 var rotation_euler: Vector3
 
 func _ready() -> void:
-	look_at(global_transform.origin + direction, Vector3.UP)
+	# look_at(global_transform.origin + direction, Vector3.UP) THIS WAS WHY THE FUCKING BULLET WAS FLYING AT FUCKED UP ANGLES OMG
 	pass
 
 func _physics_process(delta: float) -> void:
 	if hitbox.get_overlapping_bodies().size() > 0 and not currently_blowing_up:
+		print("BOOM")
 		var collider = hitbox.get_overlapping_bodies()[0]
 		if collider and collider.name != "Player":
 			mesh.visible = false

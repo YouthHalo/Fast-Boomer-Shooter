@@ -23,7 +23,7 @@ var touching_wall = false
 var ground_slamming = false
 
 const MAX_WALK_SPEED = 12
-const MAX_TOTAL_SPEED = 40
+const MAX_TOTAL_SPEED = 60 # feels better than 40
 const MAX_MOMENTUM_SPEED = 22
 const ACCEL = 50.0
 const AIR_ACCEL = 5.0
@@ -32,7 +32,7 @@ const FRICTION = 50.0
 var camera_tilt = 0.0
 var camera_fov = 90.0
 
-var gravity = ProjectSettings.get_setting("physics/3d/default_gravity")
+var gravity = ProjectSettings.get_setting("physics/3d/default_gravity") # 19.6 (9.8 * 2)
 var slow_factor = 0.0
 var groundslamheight = 0.0
 
@@ -55,29 +55,24 @@ func _input(event):
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
 		if is_inside_tree():
 			var projectile = projectile_scene.instantiate()
-			var muzzle_position = Cam.global_transform.origin
-			#var forward = Vector3(0, 0, -1)
-			#forward = forward.rotated(Vector3.RIGHT, Cam.rotation.x / 2)
-			#forward = forward.rotated(Vector3.UP, rotation.y / 2)
-			#projectile.direction = forward.normalized()
 			
-			#TODO i need to be able to divide the yaw and pitch of the camera by 2 to get the projectile to shoot straight BUT STILL USE THE CAMERA'S GLOBAL DIRECTION THATS THE BEST WORKING WAY SO FAR
-		
-			var camera_basis = Cam.global_transform.basis
-			projectile.direction = -camera_basis.z.normalized()
-			projectile.global_transform.origin = Cam.global_transform.origin
+			# Calculate direction manually from individual rotations
+			var forward = Vector3(0, 0, -1)
+			# Apply camera X rotation (pitch)
+			forward = forward.rotated(Vector3.RIGHT, Cam.rotation.x)
+			# Apply player Y rotation (yaw)
+			forward = forward.rotated(Vector3.UP, rotation.y)
+			projectile.direction = forward.normalized()
+
+			
+			# Set projectile position (using camera's global position)
+			var muzzle_position = Cam.global_transform.origin + -Cam.global_transform.basis.z * 1.5
+			projectile.global_transform.origin = muzzle_position # This works, but throws an error. If i fix the error, it doesn't work. To fix or ignore?
 
 			get_tree().current_scene.add_child(projectile)
 
 
-
-			print("Projectile Direction: ", projectile.direction)
-			print("Player rotation: ", rotation)
-			print("Camera rotation: ", Cam.rotation)
-
-
 func _physics_process(delta):
-
 	if Input.is_action_just_pressed("slide"):
 		if is_on_floor():
 			pass
@@ -109,7 +104,7 @@ func _physics_process(delta):
 					continue
 
 				var explosion_direction = to_body.normalized()
-				var falloff = 1.0 - clamp(distance / explosion_radius, 0.0, 1.0) #this feels inverted for some reason. Could just be me
+				var falloff = 1.0 - clamp(distance / explosion_radius, 0.0, 1.0) # this feels inverted for some reason. Could just be me
 				var force = explosion_direction * explosion_force * falloff
 
 				if body is RigidBody3D:
@@ -188,10 +183,10 @@ func _physics_process(delta):
 			var accel = ACCEL if is_on_floor() else AIR_ACCEL
 			velocity += direction * accel * delta
 			if is_on_floor() and horizontal_velocity.length() > SPEED:
-				var hvel = Vector3(velocity.x, 0, velocity.z)
-				hvel = hvel.move_toward(direction * SPEED, FRICTION * delta)
-				velocity.x = hvel.x
-				velocity.z = hvel.z
+				var clamped_hvel = Vector3(velocity.x, 0, velocity.z)
+				clamped_hvel = clamped_hvel.move_toward(direction * SPEED, FRICTION * delta)
+				velocity.x = clamped_hvel.x
+				velocity.z = clamped_hvel.z
 
 		if is_on_floor() and direction.length() > 0:
 			if speed > 0:
@@ -211,16 +206,16 @@ func _physics_process(delta):
 
 		# --- friction fix: apply to full vector
 		if is_on_floor():
-			var hvel = Vector3(velocity.x, 0, velocity.z)
-			hvel = hvel.move_toward(Vector3.ZERO, FRICTION * slow_factor * delta)
-			velocity.x = hvel.x
-			velocity.z = hvel.z
+			var friction_hvel = Vector3(velocity.x, 0, velocity.z)
+			friction_hvel = friction_hvel.move_toward(Vector3.ZERO, FRICTION * slow_factor * delta)
+			velocity.x = friction_hvel.x
+			velocity.z = friction_hvel.z
 
-	var hvel = Vector3(velocity.x, 0, velocity.z)
-	if hvel.length() > MAX_TOTAL_SPEED:
-		hvel = hvel.normalized() * MAX_TOTAL_SPEED
-		velocity.x = hvel.x
-		velocity.z = hvel.z
+	var final_hvel = Vector3(velocity.x, 0, velocity.z)
+	if final_hvel.length() > MAX_TOTAL_SPEED:
+		final_hvel = final_hvel.normalized() * MAX_TOTAL_SPEED
+		velocity.x = final_hvel.x
+		velocity.z = final_hvel.z
 
 	camera_effects()
 	move_and_slide()
