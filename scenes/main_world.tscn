@@ -29,13 +29,13 @@ size = Vector3(10, 2, 10)
 left_to_right = 1.0
 size = Vector3(10, 4, 10)
 
-[sub_resource type="PrismMesh" id="PrismMesh_wjoj8"]
-left_to_right = 1.0
-size = Vector3(10, 6, 10)
-
 [sub_resource type="PrismMesh" id="PrismMesh_bdp8l"]
 left_to_right = 1.0
 size = Vector3(10, 8, 10)
+
+[sub_resource type="PrismMesh" id="PrismMesh_wjoj8"]
+left_to_right = 1.0
+size = Vector3(10, 6, 10)
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_6x5uh"]
 
@@ -50,42 +50,62 @@ environment = SubResource("Environment_wjoj8")
 transform = Transform3D(-0.866023, -0.433016, 0.250001, 0, 0.499998, 0.866027, -0.500003, 0.749999, -0.43301, 0, 0, 0)
 shadow_enabled = true
 
-[node name="CSGBox3D" type="CSGBox3D" parent="."]
+[node name="Baseplate" type="CSGBox3D" parent="."]
 transform = Transform3D(10, 0, 0, 0, 0.333, 0, 0, 0, 10, 0, -1, 0)
 use_collision = true
 size = Vector3(50, 9, 50)
 material = SubResource("StandardMaterial3D_6x5uh")
 
-[node name="CSGBox3D" type="CSGBox3D" parent="CSGBox3D"]
+[node name="CSGBox3D" type="CSGBox3D" parent="Baseplate"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4.17751, 69.5511, -1.54254)
 size = Vector3(3.8042, 140.102, 1.42139)
 
-[node name="CSGBox3D2" type="CSGBox3D" parent="CSGBox3D"]
+[node name="CSGBox3D2" type="CSGBox3D" parent="Baseplate"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4.17751, 69.5511, 0.77765)
 size = Vector3(3.8042, 140.102, 1.27533)
 
-[node name="Player" parent="." instance=ExtResource("1_6x5uh")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.50249, 2.66622, 0)
-
-[node name="CSGMesh3D" type="CSGMesh3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 30, 1.4971, -19)
+[node name="CSGMesh3D" type="CSGMesh3D" parent="Baseplate"]
+transform = Transform3D(0.1, 0, 0, 0, 3.003, 0, 0, 0, 0.1, 3, 7.4988, -1.9)
 use_collision = true
 mesh = SubResource("PrismMesh_6x5uh")
 
-[node name="CSGMesh3D2" type="CSGMesh3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 29.9725, 2.47404, -7.01576)
+[node name="CSGMesh3D2" type="CSGMesh3D" parent="Baseplate"]
+transform = Transform3D(0.1, 0, 0, 0, 3.003, 0, 0, 0, 0.1, 2.99725, 10.4326, -0.701576)
 use_collision = true
 mesh = SubResource("PrismMesh_tt5ry")
+
+[node name="CSGMesh3D4" type="CSGMesh3D" parent="Baseplate"]
+transform = Transform3D(0.1, 0, 0, 0, 3.003, 0, 0, 0, 0.1, 2.99725, 16.4901, 1.89842)
+use_collision = true
+mesh = SubResource("PrismMesh_bdp8l")
+
+[node name="CSGBox3D3" type="CSGBox3D" parent="Baseplate"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12.6041, 112.129, 0)
+size = Vector3(1, 29.6288, 1)
+
+[node name="CSGBox3D4" type="CSGBox3D" parent="Baseplate"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12.6041, 184.436, 5.19185)
+size = Vector3(1, 29.6288, 1)
+
+[node name="CSGBox3D5" type="CSGBox3D" parent="Baseplate"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12.7802, 184.436, 11.6013)
+size = Vector3(1, 29.6288, 1)
+
+[node name="CSGBox3D6" type="CSGBox3D" parent="Baseplate"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.56392, 184.436, 11.6013)
+size = Vector3(1, 29.6288, 1)
+
+[node name="CSGBox3D7" type="CSGBox3D" parent="Baseplate"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.77883, 298.742, 0.87386)
+size = Vector3(1, 29.6288, 1)
 
 [node name="CSGMesh3D3" type="CSGMesh3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 29.9725, 3.47404, 5.98424)
 use_collision = true
 mesh = SubResource("PrismMesh_wjoj8")
 
-[node name="CSGMesh3D4" type="CSGMesh3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 29.9725, 4.49119, 18.9842)
-use_collision = true
-mesh = SubResource("PrismMesh_bdp8l")
+[node name="Player" parent="." instance=ExtResource("1_6x5uh")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.50249, 2.66622, 0)
 
 [node name="RigidBody3D" type="RigidBody3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 15, 36)

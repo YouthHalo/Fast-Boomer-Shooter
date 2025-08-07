@@ -26,7 +26,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7, 0)
 fov = 90.0
 
 [node name="RayCast3D" type="RayCast3D" parent="Camera3D"]
-target_position = Vector3(0, 0, -100)
+target_position = Vector3(0, 0, -40)
 
 [node name="In-Game UI" parent="." instance=ExtResource("2_g2els")]
 
