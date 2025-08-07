@@ -36,11 +36,14 @@ var camera_fov = 90.0
 var grapple_hook_point = Vector3.ZERO
 var is_grappling = false
 var grapple_length = 0.0
-var is_reeling_in = false  # New variable to track reel-in mode
+var is_reeling_in = false
 const GRAPPLE_RANGE = 40.0
 const GRAPPLE_PULL_SPEED = 40.0
-const GRAPPLE_REEL_SPEED = 60.0  # Faster reel-in speed
+const GRAPPLE_REEL_SPEED = 60.0
 const GRAPPLE_SWING_FORCE = 15.0
+const GRAPPLE_ELASTICITY = 0.3
+const GRAPPLE_BREAK_THRESHOLD = 1
+var previous_distance = 0.0
 
 var gravity = ProjectSettings.get_setting("physics/3d/default_gravity") # 19.6 (9.8 * 2)
 var slow_factor = 0.0
@@ -86,14 +89,13 @@ func _input(event):
 func _physics_process(delta):
 
 	if Input.is_action_just_pressed("grapple"):
-		if not is_grappling and dash_timer <= 0.0:  # Can't grapple while dashing
+		if not is_grappling and dash_timer <= 0.0:
 			attempt_grapple()
-		elif is_grappling:  # If already grappling, try to regrapple to new target
-			attempt_grapple()  # This will find a new target and regrapple
+		elif is_grappling:
+			attempt_grapple()
 	
-	# Track swing vs reel-in mode (inverted)
 	if is_grappling:
-		is_reeling_in = Input.is_action_pressed("grapple")  # Hold = reel-in, release = swing
+		is_reeling_in = not Input.is_action_pressed("grapple")
 
 	if Input.is_action_just_pressed("slide"):
 		if is_on_floor():
@@ -148,7 +150,6 @@ func _physics_process(delta):
 		else:
 			gravity = ProjectSettings.get_setting("physics/3d/default_gravity") # 19.6 (9.8 * 2)
 
-	# Give air jumps while grappling (like wall jumps)
 	if is_grappling and air_jumps < max_air_jumps:
 		air_jumps = max_air_jumps
 
@@ -172,7 +173,6 @@ func _physics_process(delta):
 		# Release grapple if currently grappling
 		if is_grappling:
 			release_grapple()
-			# Give a small upward boost when releasing grapple with jump
 			velocity.y = JUMP_VELOCITY * 0.8
 		elif air_jumps > 0:
 			ground_slamming = false
@@ -266,7 +266,6 @@ func attempt_grapple():
 	if Raycast.is_colliding():
 		var collider = Raycast.get_collider()
 		
-		# Check if the target is a valid grappling point (any solid, non-moving object)
 		var is_valid_target = false
 		
 		if collider is StaticBody3D:
@@ -274,10 +273,8 @@ func attempt_grapple():
 		elif collider is CSGShape3D:
 			is_valid_target = true
 		elif collider is CharacterBody3D and collider != self:
-			# Only allow grappling to other CharacterBody3D if they're not the player
 			is_valid_target = true
 		elif collider.has_method("get_class"):
-			# Check for other solid objects like MeshInstance3D with StaticBody3D parent
 			var parent_node = collider.get_parent()
 			if parent_node is StaticBody3D:
 				is_valid_target = true
@@ -287,6 +284,7 @@ func attempt_grapple():
 			grapple_hook_point = Raycast.get_collision_point()
 			is_grappling = true
 			grapple_length = global_position.distance_to(grapple_hook_point)
+			previous_distance = grapple_length
 			if was_already_grappling:
 				print("Regrappled to: ", grapple_hook_point, " Distance: ", grapple_length)
 			else:
@@ -294,11 +292,13 @@ func attempt_grapple():
 		else:
 			if is_grappling:
 				print("Cannot regrapple to invalid target: ", collider.get_class() if collider.has_method("get_class") else "Unknown")
+				release_grapple()  # Release grapple if regrapple fails
 			else:
 				print("Invalid grapple target: ", collider.get_class() if collider.has_method("get_class") else "Unknown")
 	else:
 		if is_grappling:
 			print("No regrapple target found within range")
+			release_grapple()  # Release grapple if regrapple misses
 		else:
 			print("No grapple target found within range")
 
@@ -314,41 +314,42 @@ func handle_grappling_physics(delta):
 	var to_hook = grapple_hook_point - global_position
 	var distance_to_hook = to_hook.length()
 	
-	# If we're holding the grapple button, reel-in behavior
+	# Check for rope breaking - if distance increased too quickly, break the rope
+	var distance_change = distance_to_hook - previous_distance
+	if distance_change > GRAPPLE_BREAK_THRESHOLD:
+		print("Rope broke due to excessive stress!")
+		release_grapple()
+		return
+	
+	# Update previous distance for next frame
+	previous_distance = distance_to_hook
+	
+	# Calculate elastic rope behavior
+	var max_elastic_length = grapple_length * (1.0 + GRAPPLE_ELASTICITY)
+	var rope_direction = to_hook.normalized()
+	
+	# If we're holding the grapple button, swing behavior
 	if Input.is_action_pressed("grapple"):
-		is_reeling_in = true
-		
-		# Reel-in behavior - quickly pull player towards grapple point
-		var pull_direction = to_hook.normalized()
-		var reel_force = GRAPPLE_REEL_SPEED
-		
-		# Increase reel force based on distance for more responsive feel
-		var distance_factor = clamp(distance_to_hook / grapple_length, 0.8, 2.5)
-		reel_force *= distance_factor
-		
-		velocity += pull_direction * reel_force * delta
-		
-		# Significantly reduce downward velocity when reeling in
-		if velocity.y < 0:
-			velocity.y *= 0.5
-		
-		# Apply minimal gravity while reeling in
-		velocity.y -= gravity * 0.3 * delta
-		
-	else:
-		# Swing behavior - constraint the player to rope length
 		is_reeling_in = false
 		
+		# Swing behavior with elastic rope constraint
 		if distance_to_hook > grapple_length:
-			# Pull player back to rope length
-			var rope_direction = to_hook.normalized()
-			var excess_distance = distance_to_hook - grapple_length
-			global_position += rope_direction * excess_distance * 0.9
+			if distance_to_hook > max_elastic_length:
+				# Hard constraint at maximum elastic length
+				var excess_distance = distance_to_hook - max_elastic_length
+				global_position += rope_direction * excess_distance * 0.95
+				distance_to_hook = max_elastic_length
+				to_hook = grapple_hook_point - global_position
 			
-			# Remove velocity component going away from hook
+			# Apply elastic force - stronger the further from rope length
+			var stretch_ratio = (distance_to_hook - grapple_length) / (max_elastic_length - grapple_length)
+			var elastic_force = stretch_ratio * 20.0  # Elastic force strength
+			velocity += rope_direction * elastic_force * delta
+			
+			# Remove velocity component going away from hook if beyond elastic limit
 			var velocity_toward_hook = velocity.dot(rope_direction)
-			if velocity_toward_hook < 0:  # Moving away from hook
-				velocity -= rope_direction * velocity_toward_hook
+			if distance_to_hook > grapple_length * 1.1 and velocity_toward_hook < 0:
+				velocity -= rope_direction * velocity_toward_hook * 0.5
 		
 		# Apply swing forces based on input
 		var swing_input = input_dir.x  # Left/right input
@@ -358,7 +359,33 @@ func handle_grappling_physics(delta):
 			velocity += swing_force * delta
 		
 		# Apply reduced gravity while swinging
-		#velocity.y -= gravity * 0.3 * delta
+		velocity.y -= gravity * 0.3 * delta
+		
+	else:
+		# Reel-in behavior - quickly pull player towards grapple point
+		is_reeling_in = true
+		
+		# Reduce rope length as we reel in
+		var reel_speed = GRAPPLE_REEL_SPEED * delta
+		if distance_to_hook > 2.0:  # Don't reel in if very close
+			grapple_length = max(grapple_length - reel_speed, 2.0)  # Minimum rope length of 2 units
+			grapple_length = min(grapple_length, distance_to_hook)  # Can't be longer than current distance
+		
+		var pull_direction = rope_direction
+		var reel_force = GRAPPLE_REEL_SPEED
+		
+		# Increase reel force based on distance for more responsive feel
+		var distance_factor = clamp(distance_to_hook / (grapple_length + 5.0), 0.8, 2.5)
+		reel_force *= distance_factor
+		
+		velocity += pull_direction * reel_force * delta
+		
+		# Significantly reduce downward velocity when reeling in
+		if velocity.y < 0:
+			velocity.y *= 0.5
+		
+		# Apply minimal gravity while reeling in
+		velocity.y -= gravity * 0.1 * delta
 
 func camera_effects() -> void:
 	camera_tilt = clamp(-input_dir.x * velocity.length() * 0.0025, -0.15, 0.15)
