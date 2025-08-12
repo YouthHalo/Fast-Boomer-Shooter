@@ -41,8 +41,6 @@ const GRAPPLE_RANGE = 40.0
 const GRAPPLE_SPEED = 40.0
 const GRAPPLE_SWING_FORCE = 15.0
 const GRAPPLE_ELASTICITY = 0.3
-const GRAPPLE_BREAK_THRESHOLD = 1
-var previous_distance = 0.0
 
 # Visual rope using sphere dots
 var rope_dots = []
@@ -294,7 +292,6 @@ func attempt_grapple():
 			grapple_hook_point = Raycast.get_collision_point()
 			is_grappling = true
 			grapple_length = global_position.distance_to(grapple_hook_point)
-			previous_distance = grapple_length
 			if was_already_grappling:
 				print("Regrappled to: ", grapple_hook_point, " Distance: ", grapple_length)
 			else:
@@ -323,16 +320,6 @@ func handle_grappling_physics(delta):
 		
 	var to_hook = grapple_hook_point - global_position
 	var distance_to_hook = to_hook.length()
-	
-	# Check for rope breaking - if distance increased too quickly, break the rope
-	var distance_change = distance_to_hook - previous_distance
-	if distance_change > GRAPPLE_BREAK_THRESHOLD:
-		print("Rope broke due to excessive stress!")
-		release_grapple()
-		return
-	
-	# Update previous distance for next frame
-	previous_distance = distance_to_hook
 	
 	# Calculate elastic rope behavior
 	var max_elastic_length = grapple_length * (1.0 + GRAPPLE_ELASTICITY)
@@ -374,6 +361,7 @@ func handle_grappling_physics(delta):
 	else:
 		is_reeling_in = true
 		
+		# When reeling in, go straight toward the grapple point with limited other influences
 		var reel_speed = GRAPPLE_SPEED * delta
 		if distance_to_hook > 2.0:
 			# Add safety margin when near walls/surfaces
@@ -384,36 +372,23 @@ func handle_grappling_physics(delta):
 			grapple_length = max(grapple_length - reel_speed, min_rope_length)
 			grapple_length = min(grapple_length, distance_to_hook)
 		
-		# Hard constraint - no elasticity when reeling in
-		if distance_to_hook > grapple_length:
-			# Check if we're about to clip into a wall
-			if is_on_wall() and grapple_length < 3.0:
-				print("Grapple released to prevent wall clipping")
-				release_grapple()
-				return
-			
-			# Use velocity-based correction instead of direct position change to prevent clipping
-			var excess_distance = distance_to_hook - grapple_length
-			var correction_force = excess_distance * 50.0  # Strong correction force
-			velocity += rope_direction * correction_force * delta
-			
-			# Stop outward velocity completely
-			var velocity_toward_hook = velocity.dot(rope_direction)
-			if velocity_toward_hook < 0:
-				velocity -= rope_direction * velocity_toward_hook
+		# Check if we're about to clip into a wall
+		if is_on_wall() and distance_to_hook < 0.5:
+			print("Grapple released to prevent wall clipping")
+			release_grapple()
+			return
 		
-		var pull_direction = rope_direction
-		var reel_force = GRAPPLE_SPEED
+		# Direct movement toward grapple point with limited other velocity influences
+		var target_velocity = rope_direction * GRAPPLE_SPEED * 2
 		
-		var distance_factor = clamp(distance_to_hook / (grapple_length + 5.0), 0.8, 2.5)
-		reel_force *= distance_factor
+		# Heavily dampen existing velocity to reduce swinging
+		velocity *= 0.9
 		
-		velocity += pull_direction * reel_force * delta
+		# Set velocity 50/50 between dampened current velocity and grapple direction
+		velocity = velocity.lerp(target_velocity, 0.5)
 		
-		if velocity.y < 0:
-			velocity.y *= 0.5
-		
-		velocity.y -= gravity * 0.1 * delta
+		# Apply minimal gravity when reeling in
+		velocity.y -= gravity * 0.5 * delta
 
 func camera_effects() -> void:
 	camera_tilt = clamp(-input_dir.x * velocity.length() * 0.0025, -0.15, 0.15)
