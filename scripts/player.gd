@@ -38,12 +38,15 @@ var is_grappling = false
 var grapple_length = 0.0
 var is_reeling_in = false
 const GRAPPLE_RANGE = 40.0
-const GRAPPLE_PULL_SPEED = 40.0
-const GRAPPLE_REEL_SPEED = 60.0
+const GRAPPLE_SPEED = 40.0
 const GRAPPLE_SWING_FORCE = 15.0
 const GRAPPLE_ELASTICITY = 0.3
 const GRAPPLE_BREAK_THRESHOLD = 1
 var previous_distance = 0.0
+
+# Visual rope using sphere dots
+var rope_dots = []
+const ROPE_SEGMENTS = 20
 
 var gravity = ProjectSettings.get_setting("physics/3d/default_gravity") # 19.6 (9.8 * 2)
 var slow_factor = 0.0
@@ -56,6 +59,9 @@ var direction
 
 func _ready():
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+	
+	# Create rope dots
+	create_rope_dots()
 
 func _input(event):
 	if event is InputEventMouseMotion:
@@ -96,6 +102,21 @@ func _physics_process(delta):
 	
 	if is_grappling:
 		is_reeling_in = not Input.is_action_pressed("grapple")
+
+		# Handle grappling hook physics
+	if is_grappling:
+		handle_grappling_physics(delta)
+	
+	# Update rope visual
+	update_rope_visual()
+
+	if not is_on_floor() and is_on_wall() and not touching_wall:
+		touching_wall = true
+		air_jumps += 1
+	elif not is_on_floor() and not is_on_wall() and touching_wall:
+		touching_wall = false
+		if air_jumps > 0:
+			air_jumps -= 1
 
 	if Input.is_action_just_pressed("slide"):
 		if is_on_floor():
@@ -153,18 +174,7 @@ func _physics_process(delta):
 	if is_grappling and air_jumps < max_air_jumps:
 		air_jumps = max_air_jumps
 
-	# Handle grappling hook physics
-	if is_grappling:
-		handle_grappling_physics(delta)
-
-	if not is_on_floor() and is_on_wall() and not touching_wall:
-		touching_wall = true
-		air_jumps += 1
-	elif not is_on_floor() and not is_on_wall() and touching_wall:
-		touching_wall = false
-		if air_jumps > 0:
-			air_jumps -= 1
-
+	#reset position if falling off map
 	if position.y < -30:
 		position = Vector3(0, 2, 0)
 		velocity = Vector3.ZERO
@@ -173,7 +183,7 @@ func _physics_process(delta):
 		# Release grapple if currently grappling
 		if is_grappling:
 			release_grapple()
-			velocity.y = JUMP_VELOCITY * 0.8
+			#velocity.y = JUMP_VELOCITY * 0.8
 		elif air_jumps > 0:
 			ground_slamming = false
 			if not is_on_floor():
@@ -362,29 +372,47 @@ func handle_grappling_physics(delta):
 		velocity.y -= gravity * 0.3 * delta
 		
 	else:
-		# Reel-in behavior - quickly pull player towards grapple point
 		is_reeling_in = true
 		
-		# Reduce rope length as we reel in
-		var reel_speed = GRAPPLE_REEL_SPEED * delta
-		if distance_to_hook > 2.0:  # Don't reel in if very close
-			grapple_length = max(grapple_length - reel_speed, 2.0)  # Minimum rope length of 2 units
-			grapple_length = min(grapple_length, distance_to_hook)  # Can't be longer than current distance
+		var reel_speed = GRAPPLE_SPEED * delta
+		if distance_to_hook > 2.0:
+			# Add safety margin when near walls/surfaces
+			var min_rope_length = 2.0
+			if is_on_wall():
+				min_rope_length = 3.5  # Larger safety margin when near walls
+			
+			grapple_length = max(grapple_length - reel_speed, min_rope_length)
+			grapple_length = min(grapple_length, distance_to_hook)
+		
+		# Hard constraint - no elasticity when reeling in
+		if distance_to_hook > grapple_length:
+			# Check if we're about to clip into a wall
+			if is_on_wall() and grapple_length < 3.0:
+				print("Grapple released to prevent wall clipping")
+				release_grapple()
+				return
+			
+			# Use velocity-based correction instead of direct position change to prevent clipping
+			var excess_distance = distance_to_hook - grapple_length
+			var correction_force = excess_distance * 50.0  # Strong correction force
+			velocity += rope_direction * correction_force * delta
+			
+			# Stop outward velocity completely
+			var velocity_toward_hook = velocity.dot(rope_direction)
+			if velocity_toward_hook < 0:
+				velocity -= rope_direction * velocity_toward_hook
 		
 		var pull_direction = rope_direction
-		var reel_force = GRAPPLE_REEL_SPEED
+		var reel_force = GRAPPLE_SPEED
 		
-		# Increase reel force based on distance for more responsive feel
 		var distance_factor = clamp(distance_to_hook / (grapple_length + 5.0), 0.8, 2.5)
 		reel_force *= distance_factor
 		
 		velocity += pull_direction * reel_force * delta
 		
-		# Significantly reduce downward velocity when reeling in
 		if velocity.y < 0:
 			velocity.y *= 0.5
 		
-		# Apply minimal gravity while reeling in
 		velocity.y -= gravity * 0.1 * delta
 
 func camera_effects() -> void:
@@ -393,3 +421,41 @@ func camera_effects() -> void:
 
 	camera_fov = 90 + clamp(input_dir.y * velocity.length() * -0.1, -10, 10)
 	Cam.fov += (camera_fov - Cam.fov) * 0.1
+
+func create_rope_dots():
+	# Create small sphere dots to form the rope
+	for i in range(ROPE_SEGMENTS):
+		var dot = MeshInstance3D.new()
+		var sphere_mesh = SphereMesh.new()
+		sphere_mesh.radius = 0.05
+		sphere_mesh.height = 0.1
+		dot.mesh = sphere_mesh
+		
+		# Create bright white material
+		var material = StandardMaterial3D.new()
+		material.albedo_color = Color.WHITE
+		material.emission_enabled = true
+		material.emission = Color.WHITE
+		material.flags_unshaded = true
+		dot.material_override = material
+		
+		dot.visible = false
+		add_child(dot)
+		rope_dots.append(dot)
+
+func update_rope_visual():
+	if not is_grappling:
+		# Hide all dots
+		for dot in rope_dots:
+			dot.visible = false
+		return
+	
+	# Show and position dots along the rope
+	var rope_start = Cam.global_position + (-Cam.global_transform.basis.z * 0.5)  # Slightly in front of camera
+	var rope_end = grapple_hook_point
+	
+	for i in range(ROPE_SEGMENTS):
+		var t = float(i) / float(ROPE_SEGMENTS - 1)  # 0 to 1
+		var dot_position = rope_start.lerp(rope_end, t)
+		rope_dots[i].global_position = dot_position
+		rope_dots[i].visible = true
