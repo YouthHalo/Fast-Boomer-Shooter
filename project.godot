@@ -17,7 +17,7 @@ config/icon="uid://ev3l80lqjmok"
 
 [display]
 
-window/vsync/vsync_mode=2
+window/vsync/vsync_mode=0
 
 [editor_plugins]
 
@@ -81,3 +81,8 @@ grapple={
 
 3d/default_gravity=19.6
 common/physics_interpolation=true
+
+[rendering]
+
+lights_and_shadows/directional_shadow/soft_shadow_filter_quality=0
+lights_and_shadows/positional_shadow/soft_shadow_filter_quality=0
