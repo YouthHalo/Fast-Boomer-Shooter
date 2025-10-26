@@ -5,42 +5,82 @@ extends Node3D
 @onready var explosion = $ExplosionParticles
 @onready var explosion_area = $ExplosionArea
 @onready var hitbox = $Hitbox
+@onready var explosion_sound = $ExplosionSound
 
 var currently_blowing_up: bool = false
 var direction: Vector3
 var rotation_euler: Vector3
+var lifetime: float = 0.0
+var max_lifetime: float = 10.0
 
 func _ready() -> void:
 	# look_at(global_transform.origin + direction, Vector3.UP) THIS WAS WHY THE FUCKING BULLET WAS FLYING AT FUCKED UP ANGLES OMG
 	pass
 
 func _physics_process(delta: float) -> void:
-	if hitbox.get_overlapping_bodies().size() > 0 and not currently_blowing_up:
-		print("BOOM")
-		var collider = hitbox.get_overlapping_bodies()[0]
-		if collider and collider.name != "Player":
-			mesh.visible = false
-			explosion.emitting = true
-			currently_blowing_up = true
+	if currently_blowing_up or not is_inside_tree():
+		return
+	
+	lifetime += delta
+	if lifetime >= max_lifetime:
+		explode()
+		return
+	
+	# Use raycast for proper collision detection
+	if direction != Vector3.ZERO:
+		var space_state = get_world_3d().direct_space_state
+		if not space_state:
+			return
+			
+		var ray_length = speed * delta
+		var query = PhysicsRayQueryParameters3D.create(
+			global_transform.origin,
+			global_transform.origin + direction * ray_length
+		)
+		query.exclude = [self]
+		
+		var result = space_state.intersect_ray(query)
+		
+		if result:
+			var collider = result.collider
+			if collider and collider.name != "Player":
+				# Move to collision point before exploding
+				# global_transform.origin = result.position ## Messes with hitting objects, will not use
+				explode()
+				return
+		
+		# Move the projectile
+		translate(direction * speed * delta)
 
-			var explosion_radius = 8.0
-			var explosion_force = 60.0
-			var origin = global_transform.origin
+func explode() -> void:
+	if currently_blowing_up:
+		return
+	
+	currently_blowing_up = true
+	
+	if not is_inside_tree():
+		return
+		
+	print("BOOM")
+	mesh.visible = false
+	explosion.emitting = true
+	
+	# Add random variance to explosion sound
+	explosion_sound.pitch_scale = randf_range(0.8, 1.2)
+	explosion_sound.play()
 
-			explosion_area.scale = Vector3.ONE * (explosion_radius / 2.0)
-			explosion_area.global_transform.origin = origin
+	var explosion_radius = 8.0
+	var explosion_force = 60.0
+	var origin = global_transform.origin
 
-			# Apply explosion impulse
-			apply_explosion_impulse(origin, explosion_force, explosion_radius)
+	explosion_area.scale = Vector3.ONE * (explosion_radius / 2.0)
+	explosion_area.global_transform.origin = origin
 
-			await get_tree().create_timer(0.5).timeout
-			queue_free()
-		else:
-			if direction != Vector3.ZERO:
-				translate(direction * speed * delta)
-	else:
-		if direction != Vector3.ZERO:
-			translate(direction * speed * delta)
+	apply_explosion_impulse(origin, explosion_force, explosion_radius)
+
+	await get_tree().create_timer(0.5).timeout
+	if is_inside_tree():
+		queue_free()
 
 func apply_explosion_impulse(explosion_origin: Vector3, explosion_force: float, explosion_radius: float) -> void:
 	for body in explosion_area.get_overlapping_bodies():
@@ -64,4 +104,3 @@ func apply_explosion_impulse(explosion_origin: Vector3, explosion_force: float, 
 			body.apply_central_impulse(force)
 		elif body is CharacterBody3D and "velocity" in body:
 			body.velocity += force
-			

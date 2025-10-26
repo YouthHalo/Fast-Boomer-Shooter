@@ -91,7 +91,6 @@ func _input(event):
 
 
 func _physics_process(delta):
-
 	if Input.is_action_just_pressed("grapple"):
 		if not is_grappling and dash_timer <= 0.0:
 			attempt_grapple()
@@ -299,13 +298,13 @@ func attempt_grapple():
 		else:
 			if is_grappling:
 				print("Cannot regrapple to invalid target: ", collider.get_class() if collider.has_method("get_class") else "Unknown")
-				release_grapple()  # Release grapple if regrapple fails
+				release_grapple() # Release grapple if regrapple fails
 			else:
 				print("Invalid grapple target: ", collider.get_class() if collider.has_method("get_class") else "Unknown")
 	else:
 		if is_grappling:
 			print("No regrapple target found within range")
-			release_grapple()  # Release grapple if regrapple misses
+			release_grapple() # Release grapple if regrapple misses
 		else:
 			print("No grapple target found within range")
 
@@ -340,7 +339,7 @@ func handle_grappling_physics(delta):
 			
 			# Apply elastic force - stronger the further from rope length
 			var stretch_ratio = (distance_to_hook - grapple_length) / (max_elastic_length - grapple_length)
-			var elastic_force = stretch_ratio * 20.0  # Elastic force strength
+			var elastic_force = stretch_ratio * 20.0 # Elastic force strength
 			velocity += rope_direction * elastic_force * delta
 			
 			# Remove velocity component going away from hook if beyond elastic limit
@@ -349,9 +348,9 @@ func handle_grappling_physics(delta):
 				velocity -= rope_direction * velocity_toward_hook * 0.5
 		
 		# Apply swing forces based on input
-		var swing_input = input_dir.x  # Left/right input
+		var swing_input = input_dir.x # Left/right input
 		if swing_input != 0:
-			var right_direction = -transform.basis.x  # Player's right direction
+			var right_direction = - transform.basis.x # Player's right direction
 			var swing_force = right_direction * swing_input * GRAPPLE_SWING_FORCE
 			velocity += swing_force * delta
 		
@@ -367,7 +366,7 @@ func handle_grappling_physics(delta):
 			# Add safety margin when near walls/surfaces
 			var min_rope_length = 2.0
 			if is_on_wall():
-				min_rope_length = 3.5  # Larger safety margin when near walls
+				min_rope_length = 3.5 # Larger safety margin when near walls
 			
 			grapple_length = max(grapple_length - reel_speed, min_rope_length)
 			grapple_length = min(grapple_length, distance_to_hook)
@@ -426,11 +425,11 @@ func update_rope_visual():
 		return
 	
 	# Show and position dots along the rope
-	var rope_start = Cam.global_position + (-Cam.global_transform.basis.z * 0.5)  # Slightly in front of camera
+	var rope_start = Cam.global_position + (-Cam.global_transform.basis.z * 0.5) # Slightly in front of camera
 	var rope_end = grapple_hook_point
 	
 	for i in range(ROPE_SEGMENTS):
-		var t = float(i) / float(ROPE_SEGMENTS - 1)  # 0 to 1
+		var t = float(i) / float(ROPE_SEGMENTS - 1) # 0 to 1
 		var dot_position = rope_start.lerp(rope_end, t)
 		rope_dots[i].global_position = dot_position
 		rope_dots[i].visible = true
